@@ -1,0 +1,11 @@
+app:
+  embedding-service:
+    base-url: ${EMBEDDING_SERVICE_BASE_URL:http://localhost:8082}
+  llm:
+    provider: ${LLM_PROVIDER:ollama}
+    base-url: ${LLM_BASE_URL:http://localhost:11434}
+    model: ${LLM_MODEL:llama3.1}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:false}

@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: rag-query-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+app:
+  query:
+    max-question-length: ${QUERY_MAX_QUESTION_LENGTH:2000}
+    include-sources-by-default: ${QUERY_INCLUDE_SOURCES_BY_DEFAULT:true}
+  embedding-service:
+    base-url: ${EMBEDDING_SERVICE_BASE_URL:http://localhost:8082}
+    default-top-k: ${QUERY_DEFAULT_TOP_K:5}
+    request-timeout: ${EMBEDDING_SERVICE_REQUEST_TIMEOUT:PT30S}
+  llm:
+    provider: ${LLM_PROVIDER:ollama}
+    base-url: ${LLM_BASE_URL:http://localhost:11434}
+    model: ${LLM_MODEL:llama3.1}
+    request-timeout: ${LLM_REQUEST_TIMEOUT:PT2M}
+    temperature: ${LLM_TEMPERATURE:0.2}
+    max-context-characters: ${LLM_MAX_CONTEXT_CHARACTERS:12000}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: rag-query-service

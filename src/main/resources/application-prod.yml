@@ -1,0 +1,11 @@
+app:
+  embedding-service:
+    base-url: ${EMBEDDING_SERVICE_BASE_URL}
+  llm:
+    provider: ${LLM_PROVIDER}
+    base-url: ${LLM_BASE_URL}
+    model: ${LLM_MODEL}
+
+security:
+  jwt:
+    enabled: ${SECURITY_JWT_ENABLED:true}

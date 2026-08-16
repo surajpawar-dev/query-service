@@ -42,7 +42,7 @@ public class QueryOrchestrationService {
         validateQuestionLength(request);
         if (request.mode() == QueryMode.GENERAL) {
             return llmClient
-                    .streamDirectAnswer(request.question())
+                    .streamDirectAnswer(request.question(), request.history())
                     .map(QueryStreamEvent::token)
                     .concatWithValues(QueryStreamEvent.done());
         }
@@ -55,7 +55,9 @@ public class QueryOrchestrationService {
                         : request.includeSources();
 
         return embeddingSearchClient
-                .search(new EmbeddingSearchRequest(request.question(), topK, request.documentIds()))
+                .search(
+                        new EmbeddingSearchRequest(
+                                buildSearchQuery(request), topK, request.documentIds()))
                 .flatMapMany(
                         response -> {
                             List<SourceChunk> sources =
@@ -90,5 +92,22 @@ public class QueryOrchestrationService {
                     HttpStatus.BAD_REQUEST,
                     "Question exceeds maximum configured length");
         }
+    }
+
+    private String buildSearchQuery(QueryRequest request) {
+        if (request.history() == null || request.history().isEmpty()) {
+            return request.question();
+        }
+        StringBuilder query = new StringBuilder();
+        request.history().stream()
+                .filter(message -> message.content() != null && !message.content().isBlank())
+                .forEach(
+                        message ->
+                                query.append(message.role())
+                                        .append(": ")
+                                        .append(message.content())
+                                        .append("\n"));
+        query.append("user: ").append(request.question());
+        return query.toString();
     }
 }

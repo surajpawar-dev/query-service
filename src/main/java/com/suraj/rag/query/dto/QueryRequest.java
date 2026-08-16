@@ -1,5 +1,6 @@
 package com.suraj.rag.query.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -12,4 +13,5 @@ public record QueryRequest(
         QueryMode mode,
         @Min(1) @Max(50) Integer topK,
         List<UUID> documentIds,
-        Boolean includeSources) {}
+        Boolean includeSources,
+        @Valid @Size(max = 12) List<QueryHistoryMessage> history) {}

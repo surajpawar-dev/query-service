@@ -1,9 +1,11 @@
 package com.suraj.rag.query.client.llm;
 
 import com.suraj.rag.query.config.LlmProperties;
+import com.suraj.rag.query.dto.QueryHistoryMessage;
 import com.suraj.rag.query.exception.ErrorCode;
 import com.suraj.rag.query.exception.QueryException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -34,18 +36,37 @@ public class OllamaChatClient implements LlmClient {
     }
 
     @Override
-    public Flux<String> streamDirectAnswer(String question) {
+    public Flux<String> streamDirectAnswer(String question, List<QueryHistoryMessage> history) {
         return streamAnswer(
-                "You are a helpful assistant. Keep answers direct and useful.", question);
+                "You are a helpful assistant. Use the conversation history when it is relevant. Keep answers direct and useful.",
+                history,
+                question);
     }
 
     private Flux<String> streamAnswer(String systemMessage, String userMessage) {
+        return streamAnswer(systemMessage, List.of(), userMessage);
+    }
+
+    private Flux<String> streamAnswer(
+            String systemMessage, List<QueryHistoryMessage> history, String userMessage) {
+        List<OllamaMessage> messages = new ArrayList<>();
+        messages.add(new OllamaMessage("system", systemMessage));
+        if (history != null) {
+            history.stream()
+                    .filter(message -> message.content() != null && !message.content().isBlank())
+                    .filter(
+                            message ->
+                                    "user".equals(message.role())
+                                            || "assistant".equals(message.role()))
+                    .map(message -> new OllamaMessage(message.role(), message.content()))
+                    .forEach(messages::add);
+        }
+        messages.add(new OllamaMessage("user", userMessage));
+
         OllamaChatRequest request =
                 new OllamaChatRequest(
                         properties.model(),
-                        List.of(
-                                new OllamaMessage("system", systemMessage),
-                                new OllamaMessage("user", userMessage)),
+                        messages,
                         true,
                         new OllamaOptions(properties.temperature()));
 

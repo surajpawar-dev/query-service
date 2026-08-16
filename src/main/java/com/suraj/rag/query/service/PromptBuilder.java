@@ -1,6 +1,7 @@
 package com.suraj.rag.query.service;
 
 import com.suraj.rag.query.config.LlmProperties;
+import com.suraj.rag.query.dto.QueryHistoryMessage;
 import com.suraj.rag.query.dto.QueryRequest;
 import com.suraj.rag.query.dto.SourceChunk;
 import java.util.List;
@@ -16,6 +17,7 @@ public class PromptBuilder {
     }
 
     public String build(QueryRequest request, List<SourceChunk> sources) {
+        String history = formatHistory(request.history());
         StringBuilder context = new StringBuilder();
         int remainingCharacters = properties.maxContextCharacters();
 
@@ -57,9 +59,27 @@ public class PromptBuilder {
                 Context:
                 %s
 
+                Conversation history:
+                %s
+
                 Question:
                 %s
                 """
-                .formatted(context, request.question());
+                .formatted(context, history, request.question());
+    }
+
+    private String formatHistory(List<QueryHistoryMessage> history) {
+        if (history == null || history.isEmpty()) {
+            return "No previous messages.";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (QueryHistoryMessage message : history) {
+            if (message.content() == null || message.content().isBlank()) {
+                continue;
+            }
+            builder.append(message.role()).append(": ").append(message.content()).append("\n");
+        }
+        return builder.isEmpty() ? "No previous messages." : builder.toString();
     }
 }

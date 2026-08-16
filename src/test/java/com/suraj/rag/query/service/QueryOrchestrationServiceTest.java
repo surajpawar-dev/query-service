@@ -12,6 +12,7 @@ import com.suraj.rag.query.config.LlmProperties;
 import com.suraj.rag.query.config.QueryProperties;
 import com.suraj.rag.query.dto.EmbeddingSearchRequest;
 import com.suraj.rag.query.dto.EmbeddingSearchResponse;
+import com.suraj.rag.query.dto.QueryHistoryMessage;
 import com.suraj.rag.query.dto.QueryMode;
 import com.suraj.rag.query.dto.QueryRequest;
 import com.suraj.rag.query.dto.QueryStreamEvent;
@@ -58,24 +59,22 @@ class QueryOrchestrationServiceTest {
 
     @Test
     void generalModeCallsLlmDirectlyWithoutEmbeddingSearch() {
-        when(llmClient.streamDirectAnswer("What is the capital of France?"))
+        List<QueryHistoryMessage> history =
+                List.of(new QueryHistoryMessage("user", "My name is Suraj."));
+        when(llmClient.streamDirectAnswer("What is my name?", history))
                 .thenReturn(Flux.just("Paris"));
 
         Flux<QueryStreamEvent> stream =
                 service.stream(
                         new QueryRequest(
-                                "What is the capital of France?",
-                                QueryMode.GENERAL,
-                                null,
-                                null,
-                                false));
+                                "What is my name?", QueryMode.GENERAL, null, null, false, history));
 
         StepVerifier.create(stream)
                 .expectNext(QueryStreamEvent.token("Paris"))
                 .expectNext(QueryStreamEvent.done())
                 .verifyComplete();
         verify(embeddingSearchClient, never()).search(any());
-        verify(llmClient).streamDirectAnswer("What is the capital of France?");
+        verify(llmClient).streamDirectAnswer("What is my name?", history);
     }
 
     @Test
@@ -100,7 +99,10 @@ class QueryOrchestrationServiceTest {
                                 QueryMode.SPECIFIC,
                                 8,
                                 List.of(documentId),
-                                true));
+                                true,
+                                List.of(
+                                        new QueryHistoryMessage(
+                                                "user", "We were discussing store policy."))));
 
         StepVerifier.create(stream)
                 .expectNext(QueryStreamEvent.token("Refunds are allowed."))

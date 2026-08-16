@@ -27,15 +27,25 @@ public class OllamaChatClient implements LlmClient {
     }
 
     @Override
-    public Flux<String> streamAnswer(String prompt) {
+    public Flux<String> streamGroundedAnswer(String prompt) {
+        return streamAnswer(
+                "You answer using only the supplied context. If the context is insufficient, say that clearly.",
+                prompt);
+    }
+
+    @Override
+    public Flux<String> streamDirectAnswer(String question) {
+        return streamAnswer(
+                "You are a helpful assistant. Keep answers direct and useful.", question);
+    }
+
+    private Flux<String> streamAnswer(String systemMessage, String userMessage) {
         OllamaChatRequest request =
                 new OllamaChatRequest(
                         properties.model(),
                         List.of(
-                                new OllamaMessage(
-                                        "system",
-                                        "You answer using only the supplied context. If the context is insufficient, say that clearly."),
-                                new OllamaMessage("user", prompt)),
+                                new OllamaMessage("system", systemMessage),
+                                new OllamaMessage("user", userMessage)),
                         true,
                         new OllamaOptions(properties.temperature()));
 

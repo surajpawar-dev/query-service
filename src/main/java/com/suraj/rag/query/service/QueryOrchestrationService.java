@@ -5,6 +5,7 @@ import com.suraj.rag.query.client.llm.LlmClient;
 import com.suraj.rag.query.config.EmbeddingServiceProperties;
 import com.suraj.rag.query.config.QueryProperties;
 import com.suraj.rag.query.dto.EmbeddingSearchRequest;
+import com.suraj.rag.query.dto.QueryMode;
 import com.suraj.rag.query.dto.QueryRequest;
 import com.suraj.rag.query.dto.QueryStreamEvent;
 import com.suraj.rag.query.dto.SourceChunk;
@@ -39,6 +40,13 @@ public class QueryOrchestrationService {
 
     public Flux<QueryStreamEvent> stream(QueryRequest request) {
         validateQuestionLength(request);
+        if (request.mode() == QueryMode.GENERAL) {
+            return llmClient
+                    .streamDirectAnswer(request.question())
+                    .map(QueryStreamEvent::token)
+                    .concatWithValues(QueryStreamEvent.done());
+        }
+
         int topK =
                 request.topK() == null ? embeddingServiceProperties.defaultTopK() : request.topK();
         boolean includeSources =
@@ -61,7 +69,9 @@ public class QueryOrchestrationService {
                             }
                             String prompt = promptBuilder.build(request, sources);
                             Flux<QueryStreamEvent> answerEvents =
-                                    llmClient.streamAnswer(prompt).map(QueryStreamEvent::token);
+                                    llmClient
+                                            .streamGroundedAnswer(prompt)
+                                            .map(QueryStreamEvent::token);
                             Flux<QueryStreamEvent> sourceEvents =
                                     includeSources
                                             ? Flux.just(QueryStreamEvent.sources(sources))

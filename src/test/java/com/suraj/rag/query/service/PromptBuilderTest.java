@@ -3,6 +3,7 @@ package com.suraj.rag.query.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.suraj.rag.query.config.LlmProperties;
+import com.suraj.rag.query.dto.QueryMode;
 import com.suraj.rag.query.dto.QueryRequest;
 import com.suraj.rag.query.dto.SourceChunk;
 import java.time.Duration;
@@ -29,7 +30,8 @@ class PromptBuilderTest {
 
         String prompt =
                 builder.build(
-                        new QueryRequest("What is the refund rule?", 5, null, true),
+                        new QueryRequest(
+                                "What is the refund rule?", QueryMode.ALL_DOCUMENTS, 5, null, true),
                         List.of(
                                 new SourceChunk(
                                         documentId,

@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record QueryRequest(
         @NotBlank @Size(max = 2000) String question,
+        QueryMode mode,
         @Min(1) @Max(50) Integer topK,
         List<UUID> documentIds,
         Boolean includeSources) {}
